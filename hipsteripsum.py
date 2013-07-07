@@ -3,11 +3,7 @@ import sublime_plugin
 import threading
 import urllib
 import json
-if int(sublime.version()) >= 3000:
-    from . import requests
-else:
-    import requests
-
+import urllib2
 
 def err(theError):
     print("[Hipster Ipsum: " + theError + "]")
@@ -127,15 +123,18 @@ class HipsterIpsumAPICall(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        params = {"paras": self.paragraphs, "type": self.ipsumType, "html": self.useHTML}
-        
+        data = urllib.urlencode((("paras", self.paragraphs),
+                                 ("type", self.ipsumType),
+                                 ("html", self.useHTML)))
+
         try:
-            r = requests.get("http://hipsterjesus.com/api/", params=params)
+            res = urllib2.urlopen("http://hipsterjesus.com/api/", data=data)
         except Exception as e:
             err("Exception: %s" % e)
             self.result = False
 
-        data = r.json()
+        res_json = res.read()
+        data = json.loads(res_json)
         self.result = data["text"]
 
 class HipsterIpsumReplaceCommand(sublime_plugin.TextCommand):
